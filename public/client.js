@@ -1,51 +1,55 @@
 /* global io, window */
 const socket = io();
+const appData = window.APP || {};
+const name = appData.name || "";
+const room = appData.room || "";
+socket.emit("join", { name: name, room: room, role: "client" });
 
-// 서버 렌더링으로 주입된 값
-const { name = "", room = "" } = window.APP ?? {};
-socket.emit("join", { name, room, role: "client" });
-
-// DOM
 const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("message");
 const sendBtn = document.getElementById("send");
 
-// 이벤트
-sendBtn.addEventListener("click", () => send());
-inputEl.addEventListener("keydown", (e) => {
+sendBtn.addEventListener("click", function () {
+  send();
+});
+inputEl.addEventListener("keydown", function (e) {
   if (e.key === "Enter") send();
 });
 
-socket.on("message", (data) => {
-  const roleLabel = data.role ? ` (${data.role})` : "";
-  appendLine(`${data.name}${roleLabel}: ${data.text}`);
+socket.on("message", function (d) {
+  const roleLabel = d.role ? " (" + d.role + ")" : "";
+  append(d.name + roleLabel + ": " + d.text);
+});
+socket.on("system", function (d) {
+  append("[시스템] " + d.text);
 });
 
-socket.on("system", (data) => appendLine(`[시스템] ${data.text}`));
-
-// 함수
-const send = () => {
-  const v = (inputEl.value ?? "").trim();
+function send() {
+  const v = (inputEl.value || "").trim();
   if (!v) return;
   socket.emit("client_message", v);
   inputEl.value = "";
-};
+}
 
-const appendLine = (line) => {
-  const html = `
-    <div class="text">
-      <span>${escapeHtml(line)}</span>
-      <span class="muted"> ${new Date().toLocaleString()}</span>
-    </div>
-  `;
+function append(line) {
+  const html =
+    '<div class="text">' +
+    "<span>" +
+    esc(line) +
+    "</span>" +
+    '<span class="muted"> ' +
+    new Date().toLocaleString() +
+    "</span>" +
+    "</div>";
   messagesEl.insertAdjacentHTML("beforeend", html);
   messagesEl.scrollTop = messagesEl.scrollHeight;
-};
+}
 
-const escapeHtml = (s) =>
-  String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
