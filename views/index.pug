@@ -1,0 +1,26 @@
+extends layout
+
+block content
+  main
+    header
+      h1 상담 플랫폼 – 시작하기
+      p 역할을 선택하고 이름·방 코드를 입력해 주세요.
+
+    section
+      form(action="/enter" method="POST")
+        fieldset
+          legend 역할 선택
+          label
+            input(type="radio" name="role" value="client" checked)
+            |  내담자
+          label
+            input(type="radio" name="role" value="counselor")
+            |  상담사
+
+        label(for="name") 이름
+        input#name(type="text" name="name" placeholder="예: 홍길동" required)
+
+        label(for="room") 방 코드
+        input#room(type="text" name="room" placeholder="예: room1" required)
+
+        button(type="submit") 입장하기

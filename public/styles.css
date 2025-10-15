@@ -1,0 +1,121 @@
+/* 기본 리셋 (아주 가볍게) */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #f6f7fb;
+  color: #111827;
+}
+
+/* 중앙 카드 레이아웃 */
+.container {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.card {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+/* 타이틀 */
+.card h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+/* 폼 */
+.form-row {
+  display: grid;
+  gap: 6px;
+}
+label {
+  font-size: 14px;
+  color: #374151;
+}
+input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+}
+input[type="text"]::placeholder {
+  color: #9ca3af;
+}
+input[type="text"]:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* 라디오 그룹 */
+.radio-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.radio-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+.radio-pill input {
+  accent-color: #2563eb;
+}
+
+/* 버튼 */
+button {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  padding: 12px 14px;
+  border-radius: 10px;
+  width: 100%;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+}
+button:hover {
+  filter: brightness(1.05);
+}
+button:active {
+  transform: translateY(1px);
+}
+
+/* 작은 도움말/에러용 */
+.muted {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* 모바일 안전 여백 */
+@media (max-width: 420px) {
+  .card {
+    padding: 16px;
+    border-radius: 10px;
+  }
+}
