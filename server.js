@@ -21,11 +21,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 // 라우팅
-app.get("/", function (_, res) {
+app.get("/", (_, res) => {
   res.render("index", { title: "상담 플랫폼 – 시작하기" });
 });
 
-app.post("/enter", function (req, res) {
+app.post("/enter", (req, res) => {
   const role = req.body.role;
   const name = req.body.name;
   const room = req.body.room;
@@ -54,7 +54,7 @@ function ensureRoom(room) {
   return rooms[room];
 }
 
-io.on("connection", function (socket) {
+io.on("connection", (socket) => {
   socket.on("join", function (payload) {
     const name = payload && payload.name;
     const room = payload && payload.room;
@@ -74,7 +74,7 @@ io.on("connection", function (socket) {
   });
 
   // 내담자 → 메시지 → 현재 턴만으로 AI 초안(상담사 전용)
-  socket.on("client_message", async function (text) {
+  socket.on("client_message", async (text) => {
     const data = socket.data || {};
     const name = data.name;
     const room = data.room;
@@ -141,7 +141,7 @@ io.on("connection", function (socket) {
   });
 
   // 상담사 → 수정 지시(마지막 내담자 발화만 사용)
-  socket.on("counselor_refine", async function (payload) {
+  socket.on("counselor_refine", async (payload) => {
     const data = socket.data || {};
     const name = data.name;
     const room = data.room;
@@ -193,7 +193,7 @@ io.on("connection", function (socket) {
   });
 
   // 상담사 → 본 채팅으로 최종 메시지 전송
-  socket.on("counselor_send_final", function (text) {
+  socket.on("counselor_send_final", (text) => {
     const data = socket.data || {};
     const name = data.name;
     const room = data.room;
@@ -207,7 +207,7 @@ io.on("connection", function (socket) {
     });
   });
 
-  socket.on("disconnect", function () {
+  socket.on("disconnect", () => {
     const data = socket.data || {};
     const name = data.name;
     const room = data.room;

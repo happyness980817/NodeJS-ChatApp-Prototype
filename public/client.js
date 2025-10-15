@@ -9,18 +9,18 @@ const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("message");
 const sendBtn = document.getElementById("send");
 
-sendBtn.addEventListener("click", function () {
+sendBtn.addEventListener("click", () => {
   send();
 });
-inputEl.addEventListener("keydown", function (e) {
+inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") send();
 });
 
-socket.on("message", function (d) {
+socket.on("message", (d) => {
   const roleLabel = d.role ? " (" + d.role + ")" : "";
   append(d.name + roleLabel + ": " + d.text);
 });
-socket.on("system", function (d) {
+socket.on("system", (d) => {
   append("[시스템] " + d.text);
 });
 
