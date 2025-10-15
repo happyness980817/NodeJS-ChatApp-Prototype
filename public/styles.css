@@ -1,121 +1,69 @@
-/* 기본 리셋 (아주 가볍게) */
-* {
-  box-sizing: border-box;
-}
-html,
-body {
-  height: 100%;
-}
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: #f6f7fb;
-  color: #111827;
+/* 공통 여백/폭 */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-/* 중앙 카드 레이아웃 */
-.container {
-  min-height: 100%;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-}
-.card {
-  width: 100%;
-  max-width: 520px;
-  background: #fff;
+/* 패널 박스 (큰 네모) */
+.panel {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  display: grid;
-  gap: 14px;
-}
-
-/* 타이틀 */
-.card h2 {
-  margin: 0 0 4px;
-  font-size: 20px;
-}
-
-/* 폼 */
-.form-row {
-  display: grid;
-  gap: 6px;
-}
-label {
-  font-size: 14px;
-  color: #374151;
-}
-input[type="text"] {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  background: #fff;
-  color: #111827;
-}
-input[type="text"]::placeholder {
-  color: #9ca3af;
-}
-input[type="text"]:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
-
-/* 라디오 그룹 */
-.radio-group {
+  padding: 12px;
+  height: 78vh;
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
 }
-.radio-pill {
-  display: inline-flex;
-  align-items: center;
+
+/* 스크롤되는 메시지 박스 */
+.messages-box {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* 버튼/입력 가로 배치 */
+.row {
+  display: flex;
   gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 9999px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 14px;
 }
-.radio-pill input {
-  accent-color: #2563eb;
+.row > input[type="text"],
+.row > textarea {
+  flex: 1;
 }
 
-/* 버튼 */
-button {
-  appearance: none;
-  border: 0;
-  cursor: pointer;
-  padding: 12px 14px;
-  border-radius: 10px;
-  width: 100%;
-  background: #2563eb;
-  color: #fff;
-  font-weight: 600;
-  font-size: 15px;
-}
-button:hover {
-  filter: brightness(1.05);
-}
-button:active {
-  transform: translateY(1px);
+/* 2컬럼 그리드(좌:본채팅, 우:AI보조) */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 12px;
+  align-items: start;
 }
 
-/* 작은 도움말/에러용 */
-.muted {
-  color: #6b7280;
-  font-size: 12px;
-}
-
-/* 모바일 안전 여백 */
-@media (max-width: 420px) {
-  .card {
-    padding: 16px;
-    border-radius: 10px;
+/* 모바일에서는 한 컬럼 */
+@media (max-width: 900px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
   }
+  .panel {
+    height: auto; /* 모바일에서는 자연 높이 */
+  }
+}
+
+/* 보조 텍스트 */
+.muted {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+/* pre 초안 영역 기본 배경 */
+pre.draft {
+  white-space: pre-wrap;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 120px;
 }

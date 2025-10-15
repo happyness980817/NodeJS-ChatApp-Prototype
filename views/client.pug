@@ -4,18 +4,13 @@ block content
   main
     h2 #{room} – 내담자 화면
     script.
-      // 서버 렌더링으로 값 주입
       window.APP = { name: !{JSON.stringify(name)}, room: !{JSON.stringify(room)}, role: "client" };
 
-    // 큰 네모 패널
-    section.panel(style="border:1px solid #e5e7eb; border-radius:12px; padding:12px; height:78vh; display:flex; flex-direction:column; gap:12px;")
+    section.panel
       h3 본 채팅
-      // 채팅 기록 영역 (큰 네모 내부 스크롤)
-      #messages(style="flex:1; overflow-y:auto; border:1px solid #eee; border-radius:8px; padding:10px;")
-
-      // 입력 영역
-      form(onSubmit="return false;" style="display:flex; gap:8px;")
-        input#message(type="text" placeholder="메시지를 입력하세요" style="flex:1;")
+      #messages.messages-box
+      form(onSubmit="return false;" class="row")
+        input#message(type="text" placeholder="메시지를 입력하세요")
         button#send(type="button") 전송
 
     script(src="/socket.io/socket.io.js")

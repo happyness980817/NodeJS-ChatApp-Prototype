@@ -3,7 +3,8 @@ html(lang="ko" color-mode="user")
   head
     meta(charset="utf-8")
     meta(name="viewport", content="width=device-width,initial-scale=1")
-    title=title
+    title= title || '상담 플랫폼'
     link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/mvp.css/1.6.2/mvp.min.css")
+    link(rel="stylesheet", href="/styles.css")
   body
     block content
