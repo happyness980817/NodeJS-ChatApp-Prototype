@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import path from "path";
 import { fileURLToPath } from "url";
 import OpenAI from "openai";
+import session from "express-session";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,38 +15,38 @@ const server = http.createServer(app);
 const io = new Server(server);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// 세션 (개발용 기본 메모리 스토어)
+// 배포 시에는 Redis 등 외부 스토어 권장, 프록시/쿠키 설정 필요
+const sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET || "dev-secret",
+  resave: false,
+  saveUninitialized: true,
+  cookie: { sameSite: "lax" },
+});
+app.use(sessionMiddleware);
+
+// Socket.IO에 세션 공유
+io.engine.use((req, res, next) => {
+  sessionMiddleware(req, res, next);
+});
+
 // Pug + 정적
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// 라우팅
-app.get("/", (_, res) => {
-  res.render("index", { title: "상담 플랫폼 – 시작하기" });
-});
+// 유틸: 20자리 방 코드 생성 (A-Z, a-z, 0-9)
+function generateRoomCode(len = 20) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let out = "";
+  for (let i = 0; i < len; i++)
+    out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
 
-app.post("/enter", (req, res) => {
-  const role = req.body.role;
-  const name = req.body.name;
-  const room = req.body.room;
-  if (!role || !name || !room) return res.status(400).send("필수값 누락");
-  if (role === "client")
-    return res.render("client", {
-      name: name,
-      room: room,
-      title: "내담자 - " + room,
-    });
-  return res.render("counselor", {
-    name: name,
-    room: room,
-    title: "상담사 - " + room,
-  });
-});
-
-/** 방 상태(최소)
- * rooms[room] = { clientId: string|null, counselorId: string|null, lastClientText: string }
- */
+// 방 상태(최소)
 const rooms = Object.create(null);
 function ensureRoom(room) {
   if (!rooms[room]) {
@@ -54,14 +55,75 @@ function ensureRoom(room) {
   return rooms[room];
 }
 
-io.on("connection", (socket) => {
-  socket.on("join", function (payload) {
-    const name = payload && payload.name;
-    const room = payload && payload.room;
-    const role = payload && payload.role;
-    if (!name || !room || !role) return;
+// 라우팅
+app.get("/", (_, res) => {
+  res.render("home", { title: "상담 플랫폼 – 시작하기" });
+});
 
-    socket.data = { name: name, room: room, role: role };
+// 새 방 생성: 코드 1회 노출 + 세션 저장
+app.post("/create", (req, res) => {
+  const { role, name } = req.body;
+  if (!role || !name) return res.status(400).send("필수값 누락");
+
+  const room = generateRoomCode(20);
+  ensureRoom(room);
+
+  // 세션에 저장
+  req.session.name = name;
+  req.session.role = role;
+  req.session.room = room;
+
+  // 코드 1회 노출 페이지 렌더(여기서만 보여줌)
+  return res.render("code", {
+    title: "방 코드 안내",
+    code: room,
+    name,
+    role,
+  });
+});
+
+// 코드 참여: 세션 저장 후 /room으로 이동
+app.post("/enter", (req, res) => {
+  const { role, name, room } = req.body;
+  if (!role || !name || !room) return res.status(400).send("필수값 누락");
+
+  // 방 존재 보장 (없으면 생성 혹은 에러 처리 선택 가능)
+  ensureRoom(room);
+
+  // 세션에 저장
+  req.session.name = name;
+  req.session.role = role;
+  req.session.room = room;
+
+  return res.redirect("/room");
+});
+
+// 세션 기반 방 입장 (뷰 렌더)
+app.get("/room", (req, res) => {
+  const { name, role, room } = req.session;
+
+  if (!name || !role || !room || !rooms[room]) {
+    return res.redirect("/");
+  }
+
+  // 코드는 화면/타이틀에서 노출하지 않음
+  if (role === "client") {
+    return res.render("client", { name, room, title: "내담자" });
+  }
+  return res.render("counselor", { name, room, title: "상담사" });
+});
+
+// 소켓
+io.on("connection", (socket) => {
+  // 세션에서 사용자 상태 복원
+  const sess =
+    socket.request && socket.request.session ? socket.request.session : null;
+  const name = sess && sess.name ? sess.name : undefined;
+  const room = sess && sess.room ? sess.room : undefined;
+  const role = sess && sess.role ? sess.role : undefined;
+
+  if (name && room && role) {
+    socket.data = { name, room, role };
     socket.join(room);
 
     const r = ensureRoom(room);
@@ -71,21 +133,26 @@ io.on("connection", (socket) => {
     io.to(room).emit("system", {
       text: name + "님(" + role + ")이 입장했습니다.",
     });
+  }
+
+  // (호환성) 클라이언트가 기존처럼 join 이벤트를 보내도 무시하거나 세션 재확인
+  socket.on("join", () => {
+    // 이미 세션으로 합류 완료. 필요 시 세션 검사 후 보강만.
   });
 
   // 내담자 → 메시지 → 현재 턴만으로 AI 초안(상담사 전용)
   socket.on("client_message", async (text) => {
     const data = socket.data || {};
-    const name = data.name;
-    const room = data.room;
-    const role = data.role;
-    if (role !== "client" || !room || !text) return;
+    const sName = data.name;
+    const sRoom = data.room;
+    const sRole = data.role;
+    if (sRole !== "client" || !sRoom || !text) return;
 
-    const r = ensureRoom(room);
+    const r = ensureRoom(sRoom);
 
     // 본 채팅에 표시
-    io.to(room).emit("message", {
-      name: name,
+    io.to(sRoom).emit("message", {
+      name: sName,
       role: "client",
       text: text,
       ts: Date.now(),
@@ -143,13 +210,14 @@ io.on("connection", (socket) => {
   // 상담사 → 수정 지시(마지막 내담자 발화만 사용)
   socket.on("counselor_refine", async (payload) => {
     const data = socket.data || {};
-    const name = data.name;
-    const room = data.room;
-    const role = data.role;
-    const instruction = payload && payload.instruction;
-    if (role !== "counselor" || !room || !instruction) return;
+    const sName = data.name;
+    const sRoom = data.room;
+    const sRole = data.role;
+    const instruction =
+      payload && payload.instruction ? payload.instruction : "";
+    if (sRole !== "counselor" || !sRoom || !instruction) return;
 
-    const r = ensureRoom(room);
+    const r = ensureRoom(sRoom);
     try {
       const last = r.lastClientText || "";
       const resp = await openai.responses.create({
@@ -181,7 +249,7 @@ io.on("connection", (socket) => {
         io.to(r.counselorId).emit("ai_draft", {
           text: revised,
           ts: Date.now(),
-          revisedBy: name,
+          revisedBy: sName,
         });
       }
     } catch (err) {
@@ -195,12 +263,12 @@ io.on("connection", (socket) => {
   // 상담사 → 본 채팅으로 최종 메시지 전송
   socket.on("counselor_send_final", (text) => {
     const data = socket.data || {};
-    const name = data.name;
-    const room = data.room;
-    const role = data.role;
-    if (role !== "counselor" || !room || !text) return;
-    io.to(room).emit("message", {
-      name: name,
+    const sName = data.name;
+    const sRoom = data.room;
+    const sRole = data.role;
+    if (sRole !== "counselor" || !sRoom || !text) return;
+    io.to(sRoom).emit("message", {
+      name: sName,
       role: "counselor",
       text: text,
       ts: Date.now(),
@@ -209,22 +277,22 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     const data = socket.data || {};
-    const name = data.name;
-    const room = data.room;
-    const role = data.role;
-    if (!room) return;
-    const r = ensureRoom(room);
-    if (role === "client" && r.clientId === socket.id) r.clientId = null;
-    if (role === "counselor" && r.counselorId === socket.id)
+    const sName = data.name;
+    const sRoom = data.room;
+    const sRole = data.role;
+    if (!sRoom) return;
+    const r = ensureRoom(sRoom);
+    if (sRole === "client" && r.clientId === socket.id) r.clientId = null;
+    if (sRole === "counselor" && r.counselorId === socket.id)
       r.counselorId = null;
-    io.to(room).emit("system", {
+    io.to(sRoom).emit("system", {
       text:
-        (name || "익명") + "님(" + (role || "알수없음") + ")이 퇴장했습니다.",
+        (sName || "익명") + "님(" + (sRole || "알수없음") + ")이 퇴장했습니다.",
     });
   });
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, function () {
+server.listen(PORT, () => {
   console.log("http://localhost:" + PORT);
 });

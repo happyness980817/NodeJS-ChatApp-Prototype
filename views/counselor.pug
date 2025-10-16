@@ -2,7 +2,7 @@ extends layout
 
 block content
   main
-    h2 #{room} – 상담사 화면
+    h2 상담사
     script.
       window.APP = { name: !{JSON.stringify(name)}, room: !{JSON.stringify(room)}, role: "counselor" };
 
@@ -18,14 +18,12 @@ block content
         h3 AI 보조 패널
         label(for="draft") AI 초안
         pre#draft.draft (여기에 AI 초안이 표시됩니다)
-
         label(for="instruction") 수정/재생성 지시
         textarea#instruction(rows="4" placeholder="예: 공감 더 강조, 질문 1개 추가 등")
-
         .row
           button#refine(type="button") AI에 수정 지시 보내기
           button#use-draft(type="button") 초안을 본 채팅으로 전송
-
         p#ai-status.muted
+
     script(src="/socket.io/socket.io.js")
     script(src="/counselor.js")

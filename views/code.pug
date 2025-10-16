@@ -1,0 +1,26 @@
+extends layout
+
+block content
+  main
+    h2 방 코드가 생성되었습니다
+    p 이 코드는 단 한 번만 표시됩니다. 복사 붙여넣기 하여 채팅방에 입장하세요.
+    input#roomcode(type="text" readonly value=code)
+    button(type="button" id="copy") 코드 복사하기
+    hr
+    form(action="/enter" method="POST")
+      input(type="hidden" name="name" value=name)
+      input(type="hidden" name="role" value=role)
+      input(type="hidden" name="room" value=code)
+      button(type="submit") 지금 바로 입장하기
+
+  script.
+    (function () {
+      var btn = document.getElementById('copy');
+      var input = document.getElementById('roomcode');
+      btn.addEventListener('click', function () {
+        input.select();
+        document.execCommand('copy');
+        btn.textContent = '복사됨';
+        setTimeout(function(){ btn.textContent='코드 복사하기'; }, 1200);
+      });
+    })();
